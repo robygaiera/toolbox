@@ -1,0 +1,1225 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://tool.connettee.com; frame-ancestors 'none'; form-action 'self'; base-uri 'self'; object-src 'none'">
+<meta name="referrer" content="no-referrer">
+<title>MoneyBox Tool</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%230a0a0a'/><rect width='32' height='32' rx='6' fill='none' stroke='%2300ff41' stroke-width='1.5'/><text x='16' y='22' text-anchor='middle' font-family='monospace' font-size='18' font-weight='bold' fill='%2300ff41'>$</text></svg>">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0a0a;--surface:#0d1a0d;--offset:#0f1f0f;
+  --border:#1a3a1a;--divider:#152515;
+  --text:#00ff41;--muted:#00aa2a;--faint:#005515;
+  --primary:#00ff41;--primary-h:#00cc33;
+  --success:#00ff41;--warn:#ff6600;--error:#ff0040;
+  --radius-sm:.375rem;--radius-md:.5rem;--radius-lg:.75rem;--radius-xl:1rem;
+  --shadow-green:0 0 20px oklch(0.7 0.3 145/.2),0 0 60px oklch(0.7 0.3 145/.1);
+  --shadow-glow:0 0 10px #00ff4150,0 0 30px #00ff4120;
+  --s1:.25rem;--s2:.5rem;--s3:.75rem;--s4:1rem;--s5:1.25rem;--s6:1.5rem;--s8:2rem;--s10:2.5rem;
+  --xs:.75rem;--sm:.875rem;--base:1rem;--lg:1.25rem;--xl:2rem;
+  --font:'Courier New',monospace;
+}
+html{-webkit-font-smoothing:antialiased}
+body{min-height:100dvh;font-family:var(--font);font-size:var(--base);color:var(--text);background:var(--bg);padding:var(--s8) var(--s4);position:relative;overflow-x:hidden}
+#matrix-canvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;opacity:.18;pointer-events:none}
+.wrap{max-width:680px;margin-inline:auto;position:relative;z-index:1}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.08) 2px,rgba(0,0,0,.08) 4px);pointer-events:none;z-index:2}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--s8);border-bottom:1px solid var(--border);padding-bottom:var(--s4)}
+.logo{display:flex;align-items:center;gap:var(--s3);font-weight:700;font-size:var(--lg);color:var(--primary);text-shadow:0 0 10px #00ff4180;letter-spacing:.1em;text-transform:uppercase}
+.logo-bracket{color:var(--muted);font-size:1.5em;line-height:1}
+.status-dot{width:8px;height:8px;border-radius:50%;background:var(--primary);box-shadow:0 0 8px var(--primary);animation:blink 1.2s step-end infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.input-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-xl);padding:var(--s6);margin-bottom:var(--s8);box-shadow:var(--shadow-green);position:relative;overflow:hidden}
+.input-card::before{content:'';position:absolute;inset:0;border-radius:var(--radius-xl);background:linear-gradient(135deg,#00ff4108 0%,transparent 50%);pointer-events:none}
+.card-label{font-size:var(--xs);font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:var(--s5);display:flex;align-items:center;gap:var(--s2)}
+.card-label::before{content:'>'}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:var(--s4)}
+@media(max-width:520px){.fields{grid-template-columns:1fr}}
+.field label{display:block;font-size:var(--xs);font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:var(--s2);color:var(--muted)}
+.iw{position:relative}
+.iw input{width:100%;background:#050f05;border:1px solid var(--border);border-radius:var(--radius-md);padding:var(--s3) var(--s3) var(--s3) var(--s8);font-size:var(--base);color:var(--primary);font-family:var(--font);transition:border-color .2s,box-shadow .2s;-moz-appearance:textfield;caret-color:var(--primary)}
+.iw input.np{padding-left:var(--s3);padding-right:var(--s8)}
+.iw input::-webkit-outer-spin-button,.iw input::-webkit-inner-spin-button{-webkit-appearance:none}
+.iw input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 2px #00ff4130,0 0 15px #00ff4120}
+.iw input::placeholder{color:var(--faint)}
+.iw input[readonly]{color:var(--muted);cursor:default}
+.pre,.suf{position:absolute;top:50%;transform:translateY(-50%);color:var(--muted);font-family:var(--font);pointer-events:none;font-size:var(--sm)}
+.pre{left:var(--s3)}.suf{right:var(--s3)}
+.hint{font-size:11px;color:var(--faint);margin-top:var(--s1)}
+.badges{display:flex;flex-wrap:wrap;gap:var(--s2);margin-top:var(--s5)}
+.badge{font-size:11px;padding:2px var(--s2);border-radius:var(--radius-sm);border:1px solid var(--border);color:var(--muted)}
+#results{display:none}
+.section-label{font-size:var(--xs);font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:var(--s4);display:flex;align-items:center;gap:var(--s2)}
+.section-label::before{content:'//'}
+.section-label::after{content:'';flex:1;height:1px;background:var(--border);margin-left:var(--s2)}
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:var(--s4);margin-bottom:var(--s8)}
+@media(max-width:520px){.compare{grid-template-columns:1fr}}
+.col-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-xl);overflow:hidden;box-shadow:var(--shadow-glow)}
+.col-head{padding:var(--s4) var(--s5);border-bottom:1px solid var(--border)}
+.col-head .ctitle{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:var(--s2)}
+.col-head .cval{font-size:var(--lg);font-weight:700;font-variant-numeric:tabular-nums;color:var(--primary);text-shadow:0 0 10px #00ff4160}
+.col-head .cval.blue{color:#00ccff;text-shadow:0 0 10px #00ccff60}
+.col-body{padding:var(--s3) var(--s5)}
+.row{display:flex;justify-content:space-between;align-items:flex-start;padding:var(--s2) 0;gap:var(--s4)}
+.row+.row{border-top:1px solid var(--divider)}
+.rl{font-size:11px;color:var(--muted);line-height:1.4}
+.rv{font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--text)}
+.rv.neg{color:var(--warn)}
+.giga{background:var(--surface);border:1px solid var(--primary);border-radius:var(--radius-xl);overflow:hidden;box-shadow:0 0 30px #00ff4130,0 0 60px #00ff4110;margin-bottom:var(--s8)}
+.giga-head{background:linear-gradient(135deg,#001a00,#003300);padding:var(--s6);border-bottom:1px solid var(--border);position:relative;overflow:hidden}
+.giga-head::after{content:'DECRYPTING...';position:absolute;top:var(--s2);right:var(--s4);font-size:10px;color:var(--faint);letter-spacing:.15em;animation:decrypt 2s steps(1) infinite}
+@keyframes decrypt{0%{content:'DECRYPTING...'}20%{content:'CALC_NETTO...'}40%{content:'RUNNING...'}60%{content:'VERIFIED...'}80%{content:'OUTPUT_OK...'}100%{content:'DECRYPTING...'}}
+.giga-head .gtitle{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:var(--s2)}
+.giga-head .gbig{font-size:var(--xl);font-weight:700;font-variant-numeric:tabular-nums;color:var(--primary);text-shadow:0 0 20px #00ff41,0 0 40px #00ff4180}
+.giga-head .gsub{font-size:var(--xs);color:var(--muted);margin-top:var(--s1)}
+.giga-body{padding:var(--s4) var(--s6)}
+.giga-row{display:flex;justify-content:space-between;align-items:flex-start;padding:var(--s3) 0;gap:var(--s4)}
+.giga-row+.giga-row{border-top:1px solid var(--divider)}
+.grl{font-size:var(--sm);color:var(--muted)}
+.grl small{display:block;font-size:11px;color:var(--faint);margin-top:2px}
+.grv{font-size:var(--sm);font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.grv.neg{color:var(--warn)}
+.grv.fin{color:var(--primary);font-size:var(--lg);text-shadow:0 0 10px #00ff4160}
+.pill{display:inline-block;font-size:11px;padding:2px var(--s2);border-radius:var(--radius-sm);border:1px solid var(--primary);color:var(--primary);font-weight:700;margin-left:var(--s2)}
+#tool-moneybox:not(.owner) .owner-only{display:none !important}
+#tool-moneybox:not(.owner) .compare{grid-template-columns:1fr}
+.bl-del{background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:var(--radius-sm);padding:0 6px;font-family:var(--font);font-size:10px;cursor:pointer;margin-left:var(--s2);transition:color .15s,border-color .15s}
+.bl-del:hover{color:var(--warn);border-color:var(--warn)}
+.bl-edit{background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:var(--radius-sm);padding:0 6px;font-family:var(--font);font-size:10px;cursor:pointer;margin-left:var(--s2);transition:color .15s,border-color .15s}
+.bl-edit:hover{color:var(--primary);border-color:var(--primary)}
+.bl-subtot{font-size:10px;color:var(--muted);margin-top:var(--s1);letter-spacing:.05em;font-variant-numeric:tabular-nums}
+.bl-subtot span:first-child{color:var(--faint)}
+.bl-actions{display:flex;gap:var(--s3);justify-content:flex-end;margin-top:var(--s4);flex-wrap:wrap}
+.bl-actions .lock-btn{width:auto;min-width:180px;padding:var(--s3) var(--s5);font-size:var(--xs)}
+@media(max-width:520px){
+  .bl-actions{justify-content:stretch}
+  .bl-actions .lock-btn{flex:1;min-width:0}
+}
+.bl-ref{font-size:11px;color:var(--text);line-height:1.3}
+.bl-tag{display:inline-block;font-size:9px;padding:1px 4px;border-radius:var(--radius-sm);border:1px solid var(--border);color:var(--faint);margin-right:var(--s2);letter-spacing:.08em}
+.bl-tag.fattura{border-color:var(--primary);color:var(--primary)}
+.bl-tag.manuale{border-color:var(--muted);color:var(--muted)}
+.bl-tag.rettifica{border-color:#ff9100;color:#ff9100}
+.bl-tag.seed{border-color:var(--faint);color:var(--faint)}
+.lock-screen{position:fixed;inset:0;background:#000;display:flex;align-items:center;justify-content:center;z-index:9999;padding:var(--s4)}
+.lock-card{background:var(--surface);border:1px solid var(--primary);border-radius:var(--radius-xl);padding:var(--s8);box-shadow:0 0 40px #00ff4130;width:100%;max-width:380px;text-align:center;position:relative;overflow:hidden}
+.lock-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--primary),transparent);animation:scan 2s linear infinite}
+@keyframes scan{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+.lock-ascii{font-size:11px;color:var(--muted);margin-bottom:var(--s5);line-height:1.4;letter-spacing:.05em}
+.lock-title{font-size:var(--lg);font-weight:700;margin-bottom:var(--s1);color:var(--primary);text-shadow:0 0 15px #00ff4180;letter-spacing:.1em;text-transform:uppercase}
+.lock-sub{font-size:var(--xs);color:var(--muted);margin-bottom:var(--s6);letter-spacing:.05em}
+.lock-input-wrap{position:relative;margin-bottom:var(--s4)}
+.lock-input{width:100%;background:#050f05;border:1px solid var(--border);border-radius:var(--radius-md);padding:var(--s3) var(--s10) var(--s3) var(--s4);font-size:var(--base);color:var(--primary);font-family:var(--font);transition:border-color .2s,box-shadow .2s;letter-spacing:.1em}
+.lock-input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 2px #00ff4130,0 0 20px #00ff4120}
+.lock-input::placeholder{color:var(--faint)}
+.lock-eye{position:absolute;right:var(--s3);top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);display:flex;align-items:center;padding:var(--s1)}
+.lock-btn{width:100%;background:transparent;color:var(--primary);border:1px solid var(--primary);border-radius:var(--radius-md);padding:var(--s3);font-size:var(--base);font-weight:700;font-family:var(--font);cursor:pointer;transition:all .2s;letter-spacing:.15em;text-transform:uppercase;box-shadow:0 0 10px #00ff4120}
+.lock-btn:hover{background:#00ff4115;box-shadow:0 0 20px #00ff4140}
+.lock-error{font-size:var(--xs);color:var(--error);margin-top:var(--s2);min-height:1.2em;letter-spacing:.05em}
+.flag-bar{background:var(--offset);border:1px solid var(--border);border-radius:var(--radius-md);padding:var(--s3) var(--s4);margin-bottom:var(--s5);display:flex;flex-wrap:wrap;align-items:center;gap:var(--s3);justify-content:space-between}
+.flag-bar label{display:flex;align-items:center;gap:var(--s2);cursor:pointer;font-size:var(--xs);color:var(--muted);font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.flag-bar input[type="checkbox"]{width:16px;height:16px;accent-color:var(--primary);cursor:pointer}
+.flag-bar label:has(input:checked) span{color:var(--primary);text-shadow:0 0 8px #00ff4160}
+.flag-bar .hint{font-size:11px;color:var(--faint);margin-top:0}
+.tabs{display:flex;gap:var(--s2);margin-bottom:var(--s6);border-bottom:1px solid var(--border);padding-bottom:0}
+.tab{flex:1;background:transparent;border:1px solid var(--border);border-bottom:none;border-radius:var(--radius-md) var(--radius-md) 0 0;padding:var(--s3) var(--s4);font-family:var(--font);font-size:var(--xs);font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);cursor:pointer;transition:all .2s;margin-bottom:-1px}
+.tab:hover{color:var(--text);border-color:var(--muted)}
+.tab.active{color:var(--primary);border-color:var(--primary);background:var(--surface);text-shadow:0 0 10px #00ff4180;box-shadow:0 0 15px #00ff4120}
+.tool{display:none}
+.tool.active{display:block}
+@media(max-width:520px){
+  body{padding:var(--s4) var(--s3)}
+  .input-card{padding:var(--s4)}
+  .col-body,.col-head,.giga-head,.giga-body{padding-inline:var(--s4)}
+  .tab{padding:var(--s2) var(--s3);font-size:10px;letter-spacing:.08em}
+}
+</style>
+</head>
+<body>
+
+<canvas id="matrix-canvas"></canvas>
+
+<div class="lock-screen" id="lock-screen">
+  <div class="lock-card">
+    <div class="lock-ascii">
+▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+░    MONEYBOX_TOOL  v2.0.26   ░
+▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓</div>
+    <div class="lock-title">[ ACCESSO RICHIESTO ]</div>
+    <div class="lock-sub">&gt; Inserisci codice di autenticazione_</div>
+    <div class="lock-input-wrap">
+      <input type="password" class="lock-input" id="pwd-input" placeholder="••••••••••••" onkeydown="if(event.key==='Enter')unlock()">
+      <button class="lock-eye" onclick="togglePwd()" aria-label="Mostra password">
+        <svg id="eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+    </div>
+    <button class="lock-btn" onclick="unlock()">&gt;&gt; ENTRA &lt;&lt;</button>
+    <div class="lock-error" id="lock-error"></div>
+  </div>
+</div>
+
+<div class="wrap">
+  <header class="header">
+    <div class="logo">
+      <span class="logo-bracket">[</span>
+      MONEYBOX_TOOL
+      <span class="logo-bracket">]</span>
+      <span class="status-dot"></span>
+    </div>
+    <span style="font-size:11px;color:var(--muted);letter-spacing:.1em">MONEYBOX v2.0.26</span>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab active" data-tool="moneybox" onclick="switchTool('moneybox')">&gt; MONEYBOX</button>
+    <button class="tab" data-tool="cookie" onclick="switchTool('cookie')">&gt; COOKIE_MGR</button>
+    <button class="tab" data-tool="bling" onclick="switchTool('bling')">&gt; BLING_TRCK</button>
+  </nav>
+
+  <div id="tool-moneybox" class="tool active">
+  <div class="input-card">
+    <div class="card-label">INPUT_DATA</div>
+    <div class="fields">
+      <div class="field">
+        <label>Totale fattura</label>
+        <div class="iw"><span class="pre">€</span><input type="number" id="totale-fattura" placeholder="0.00" min="0" step="0.01" oninput="run()"></div>
+        <p class="hint">// importo totale al cliente</p>
+      </div>
+      <div class="field owner-only">
+        <label>δ_AUX</label>
+        <div class="iw"><input type="text" id="contrib-display" placeholder="auto" class="np" readonly></div>
+        <p class="hint">// auto</p>
+      </div>
+      <div class="field owner-only">
+        <label>ε_MOD</label>
+        <div class="iw"><input type="number" id="comm" placeholder="0" min="0" max="100" step="0.1" class="np" oninput="run()"><span class="suf">%</span></div>
+        <p class="hint">// mod</p>
+      </div>
+    </div>
+    <div class="badges owner-only">
+      <span class="badge">α</span>
+      <span class="badge">τ</span>
+      <span class="badge">ι</span>
+      <span class="badge">SPLIT</span>
+    </div>
+  </div>
+
+  <div id="results">
+    <div class="section-label">CALCOLO_DETTAGLIATO</div>
+    <div class="compare">
+      <div class="col-card owner-only">
+        <div class="col-head">
+          <div class="ctitle">&gt; BUF_A</div>
+          <div class="cval" id="c1-netto">—</div>
+        </div>
+        <div class="col-body">
+          <div class="row"><div class="rl">α0</div><div class="rv" id="c1-fat">—</div></div>
+          <div class="row"><div class="rl">α1</div><div class="rv" id="c1-imp">—</div></div>
+          <div class="row"><div class="rl">- τ1</div><div class="rv neg" id="c1-inps">—</div></div>
+          <div class="row"><div class="rl">- τ2</div><div class="rv neg" id="c1-tax">—</div></div>
+          <div class="row" id="c1-comm-row"><div class="rl">- τ3</div><div class="rv neg" id="c1-comm">—</div></div>
+        </div>
+      </div>
+      <div class="col-card">
+        <div class="col-head">
+          <div class="ctitle">&gt; SPLIT_SOCIO</div>
+          <div class="cval blue" id="c2-pertesta">—</div>
+        </div>
+        <div class="col-body">
+          <div class="row"><div class="rl">totale fattura</div><div class="rv" id="c2-tot">—</div></div>
+          <div class="row"><div class="rl">- contrib. integrat.</div><div class="rv neg" id="c2-contrib">—</div></div>
+          <div class="row"><div class="rl">base_split</div><div class="rv" id="c2-imp">—</div></div>
+          <div class="row"><div class="rl">- quota_fissa</div><div class="rv neg" id="c2-46">—</div></div>
+          <div class="row"><div class="rl">resto</div><div class="rv" id="c2-resto">—</div></div>
+          <div class="row"><div class="rl">/ 2 soci</div><div class="rv" id="c2-div">—</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-label owner-only">LAYER_Ω</div>
+    <div class="giga owner-only">
+      <div class="giga-head">
+        <div class="gtitle">&gt; BUF_Ω</div>
+        <div class="gbig" id="g-finale">—</div>
+        <div class="gsub" id="g-sub">—</div>
+      </div>
+      <div class="giga-body">
+        <div class="giga-row">
+          <div class="grl">α_sum</div>
+          <div class="grv" id="g-netto">—</div>
+        </div>
+        <div class="giga-row">
+          <div class="grl">- σ</div>
+          <div class="grv neg" id="g-quota">—</div>
+        </div>
+        <div class="giga-row">
+          <div class="grl" style="font-weight:700;color:var(--text)">&gt; Ω_FIN</div>
+          <div class="grv fin" id="g-fin">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <div id="tool-cookie" class="tool">
+    <div class="flag-bar">
+      <label>
+        <input type="checkbox" id="ck-contrib4" onchange="runCookie()">
+        <span>&gt; INCARTO_ATTIVO</span>
+      </label>
+      <span class="hint">// se attivo: applica scorporo incarto</span>
+    </div>
+
+    <div class="input-card">
+      <div class="card-label">STEP_1 // VASSOIO_SUL_BANCO</div>
+      <div class="fields">
+        <div class="field">
+          <label>Vassoio concordato col goloso</label>
+          <div class="iw"><span class="pre">€</span><input type="number" id="ck-totale" placeholder="0.00" min="0" step="0.01" oninput="runCookie()"></div>
+          <p class="hint">// biscotti promessi in totale</p>
+        </div>
+        <div class="field">
+          <label>Resa del barattolo</label>
+          <div class="iw"><input type="number" id="ck-aliquota" placeholder="auto" min="0" max="100" step="0.1" class="np" oninput="runCookie()"><span class="suf">%</span></div>
+          <p class="hint">// % di biscotti che finisce nel barattolo</p>
+        </div>
+      </div>
+      <div class="badges">
+        <span class="badge">DEFAULT</span>
+        <span class="badge">FORMULA_A</span>
+      </div>
+    </div>
+
+    <div id="ck-step1-result" style="display:none">
+      <div class="giga" style="margin-bottom:var(--s6)">
+        <div class="giga-head">
+          <div class="gtitle">&gt; 🍪 NEL_BARATTOLO_ATTUALE</div>
+          <div class="gbig" id="ck-barattolo">—</div>
+          <div class="gsub" id="ck-barattolo-sub">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="ck-step2-wrap" style="display:none">
+      <div class="input-card">
+        <div class="card-label">STEP_2 // SCORTA_DESIDERATA</div>
+        <div class="fields">
+          <div class="field">
+            <label>Quanti biscotti vuoi tenere nel barattolo?</label>
+            <div class="iw"><span class="pre">€</span><input type="number" id="ck-obiettivo" placeholder="0.00" min="0" step="0.01" oninput="runCookie()"></div>
+            <p class="hint">// scorta di biscotti desiderata</p>
+          </div>
+        </div>
+        <div class="badges">
+          <span class="badge">FORMULA_B</span>
+          <span class="badge">FORMULA_C</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="ck-step2-result" style="display:none">
+      <div class="section-label">RIPARTIZIONE_BISCOTTI // SENZA_OMAGGIO</div>
+      <div class="compare">
+        <div class="col-card">
+          <div class="col-head">
+            <div class="ctitle">&gt; 📄 BISCOTTI_IN_VETRINA</div>
+            <div class="cval" id="ck-doc">—</div>
+          </div>
+          <div class="col-body">
+            <div class="row"><div class="rl">vassoio</div><div class="rv" id="ck-r-tot">—</div></div>
+            <div class="row"><div class="rl">- scorta</div><div class="rv neg" id="ck-r-ob">—</div></div>
+            <div class="row"><div class="rl">briciole mancanti</div><div class="rv" id="ck-r-delta">—</div></div>
+            <div class="row"><div class="rl">/ divisore</div><div class="rv" id="ck-r-div">—</div></div>
+            <div class="row"><div class="rl">= da mettere in vetrina</div><div class="rv" id="ck-r-doc">—</div></div>
+          </div>
+        </div>
+        <div class="col-card">
+          <div class="col-head">
+            <div class="ctitle">&gt; 💵 BISCOTTI_SOTTOBANCO</div>
+            <div class="cval blue" id="ck-cash">—</div>
+          </div>
+          <div class="col-body">
+            <div class="row"><div class="rl">vassoio</div><div class="rv" id="ck-c-tot">—</div></div>
+            <div class="row"><div class="rl">- biscotti in vetrina</div><div class="rv neg" id="ck-c-doc">—</div></div>
+            <div class="row"><div class="rl">= sottobanco</div><div class="rv" id="ck-c-cash">—</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-label">OUTPUT_FINALE</div>
+      <div class="giga">
+        <div class="giga-head">
+          <div class="gtitle">&gt; ✅ CONTEGGIO_BARATTOLO</div>
+          <div class="gbig" id="ck-verify">—</div>
+          <div class="gsub" id="ck-verify-sub">verifica somma</div>
+        </div>
+        <div class="giga-body">
+          <div class="giga-row">
+            <div class="grl">vetrina</div>
+            <div class="grv" id="ck-v-doc">—</div>
+          </div>
+          <div class="giga-row">
+            <div class="grl">+ sottobanco</div>
+            <div class="grv" id="ck-v-cash">—</div>
+          </div>
+          <div class="giga-row">
+            <div class="grl" style="font-weight:700;color:var(--text)">&gt; TOTALE_NEL_BARATTOLO</div>
+            <div class="grv fin" id="ck-v-fin">— <span class="pill" id="ck-v-pill">—</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="ck-step3-wrap" style="display:none">
+      <div class="input-card">
+        <div class="card-label">STEP_3 // OMAGGIO_AL_GOLOSO</div>
+        <div class="fields">
+          <div class="field">
+            <label>Biscotti regalati al goloso</label>
+            <div class="iw"><span class="pre">€</span><input type="number" id="ck-sconto" placeholder="0.00" min="0" step="0.01" oninput="runCookie()"></div>
+            <p class="hint">// il goloso porta via (vassoio - omaggio), il barattolo resta pieno uguale</p>
+          </div>
+          <div class="field">
+            <label>Nuovo vassoio del goloso</label>
+            <div class="iw"><span class="pre">€</span><input type="text" id="ck-newtot" placeholder="auto_calc" readonly></div>
+            <p class="hint">// calcolato automaticamente</p>
+          </div>
+        </div>
+        <div class="badges">
+          <span class="badge">FIXED</span>
+          <span class="badge">VASS</span>
+          <span class="badge">FORMULA_B</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="ck-step3-result" style="display:none">
+      <div class="section-label">RIPARTIZIONE_BISCOTTI // CON_OMAGGIO</div>
+      <div class="compare">
+        <div class="col-card">
+          <div class="col-head">
+            <div class="ctitle">&gt; 📄 BISCOTTI_IN_VETRINA</div>
+            <div class="cval" id="ck3-doc">—</div>
+          </div>
+          <div class="col-body">
+            <div class="row"><div class="rl">nuovo vassoio</div><div class="rv" id="ck3-r-tot">—</div></div>
+            <div class="row"><div class="rl">- scorta</div><div class="rv neg" id="ck3-r-ob">—</div></div>
+            <div class="row"><div class="rl">briciole mancanti</div><div class="rv" id="ck3-r-delta">—</div></div>
+            <div class="row"><div class="rl">/ divisore</div><div class="rv" id="ck3-r-div">—</div></div>
+            <div class="row"><div class="rl">= da mettere in vetrina</div><div class="rv" id="ck3-r-doc">—</div></div>
+          </div>
+        </div>
+        <div class="col-card">
+          <div class="col-head">
+            <div class="ctitle">&gt; 💵 BISCOTTI_SOTTOBANCO</div>
+            <div class="cval blue" id="ck3-cash">—</div>
+          </div>
+          <div class="col-body">
+            <div class="row"><div class="rl">nuovo vassoio</div><div class="rv" id="ck3-c-tot">—</div></div>
+            <div class="row"><div class="rl">- biscotti in vetrina</div><div class="rv neg" id="ck3-c-doc">—</div></div>
+            <div class="row"><div class="rl">= sottobanco</div><div class="rv" id="ck3-c-cash">—</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-label">OUTPUT_FINALE // POST_OMAGGIO</div>
+      <div class="giga">
+        <div class="giga-head">
+          <div class="gtitle">&gt; ✅ CONTEGGIO_POST_OMAGGIO</div>
+          <div class="gbig" id="ck3-verify">—</div>
+          <div class="gsub" id="ck3-verify-sub">verifica somma</div>
+        </div>
+        <div class="giga-body">
+          <div class="giga-row">
+            <div class="grl">goloso_porta_via</div>
+            <div class="grv" id="ck3-v-paga">—</div>
+          </div>
+          <div class="giga-row">
+            <div class="grl">vetrina</div>
+            <div class="grv" id="ck3-v-doc">—</div>
+          </div>
+          <div class="giga-row">
+            <div class="grl">+ sottobanco</div>
+            <div class="grv" id="ck3-v-cash">—</div>
+          </div>
+          <div class="giga-row">
+            <div class="grl" style="font-weight:700;color:var(--text)">&gt; TOTALE_NEL_BARATTOLO</div>
+            <div class="grv fin" id="ck3-v-fin">— <span class="pill" id="ck3-v-pill">—</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="ck-step4-wrap" style="display:none">
+      <div class="input-card">
+        <div class="card-label">STEP_4 // OVERRIDE_MANUALE_SOTTOBANCO</div>
+        <div class="fields">
+          <div class="field">
+            <label>Sottobanco deciso a mano</label>
+            <div class="iw"><span class="pre">€</span><input type="number" id="ck-man-cash" placeholder="0.00" min="0" step="0.01" oninput="runCookie()"></div>
+            <p class="hint">// imposti tu quanto sottobanco, la vetrina si ricalcola per mantenere la scorta</p>
+          </div>
+          <div class="field">
+            <label>Vetrina risultante</label>
+            <div class="iw"><span class="pre">€</span><input type="text" id="ck4-newdoc" placeholder="auto_calc" readonly></div>
+            <p class="hint">// calcolato per centrare la scorta</p>
+          </div>
+        </div>
+        <div class="badges">
+          <span class="badge">MANUAL</span>
+          <span class="badge">KEEP_SCORTA</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="ck-step4-result" style="display:none">
+      <div class="section-label">OVERRIDE_MANUALE // MANTIENE_SCORTA</div>
+      <div class="compare">
+        <div class="col-card">
+          <div class="col-head">
+            <div class="ctitle">&gt; 📄 VETRINA_RICALCOLATA</div>
+            <div class="cval" id="ck4-doc">—</div>
+          </div>
+          <div class="col-body">
+            <div class="row"><div class="rl">scorta</div><div class="rv" id="ck4-r-ob">—</div></div>
+            <div class="row"><div class="rl">- sottobanco (manuale)</div><div class="rv neg" id="ck4-r-cash">—</div></div>
+            <div class="row"><div class="rl">differenza</div><div class="rv" id="ck4-r-delta">—</div></div>
+            <div class="row"><div class="rl">/ resa</div><div class="rv" id="ck4-r-div">—</div></div>
+            <div class="row"><div class="rl">= da mettere in vetrina</div><div class="rv" id="ck4-r-doc">—</div></div>
+          </div>
+        </div>
+        <div class="col-card">
+          <div class="col-head">
+            <div class="ctitle">&gt; 💵 TOTALE_CLIENTE</div>
+            <div class="cval blue" id="ck4-tot">—</div>
+          </div>
+          <div class="col-body">
+            <div class="row"><div class="rl">vetrina</div><div class="rv" id="ck4-c-doc">—</div></div>
+            <div class="row"><div class="rl">+ sottobanco</div><div class="rv" id="ck4-c-cash">—</div></div>
+            <div class="row"><div class="rl">= totale pagato</div><div class="rv" id="ck4-c-tot">—</div></div>
+            <div class="row"><div class="rl">Δ vs concordato</div><div class="rv" id="ck4-c-delta">—</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-label">VERIFICA_BARATTOLO</div>
+      <div class="giga">
+        <div class="giga-head">
+          <div class="gtitle">&gt; ✅ CONTEGGIO_BARATTOLO</div>
+          <div class="gbig" id="ck4-verify">—</div>
+          <div class="gsub" id="ck4-verify-sub">verifica somma</div>
+        </div>
+        <div class="giga-body">
+          <div class="giga-row">
+            <div class="grl">vetrina</div>
+            <div class="grv" id="ck4-v-doc">—</div>
+          </div>
+          <div class="giga-row">
+            <div class="grl">+ sottobanco</div>
+            <div class="grv" id="ck4-v-cash">—</div>
+          </div>
+          <div class="giga-row">
+            <div class="grl" style="font-weight:700;color:var(--text)">&gt; TOTALE_NEL_BARATTOLO</div>
+            <div class="grv fin" id="ck4-v-fin">— <span class="pill" id="ck4-v-pill">—</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tool-bling" class="tool">
+    <div class="input-card">
+      <div class="card-label">SEED_A // SITUAZIONE_INIZIALE_A</div>
+      <div class="fields">
+        <div class="field">
+          <label>Saldo iniziale colonna A</label>
+          <div class="iw"><span class="pre">€</span><input type="number" id="bl-seedA" placeholder="0.00" step="0.01" oninput="blingSeedDirty()"></div>
+          <p class="hint">// es. -500 = debito iniziale verso A</p>
+        </div>
+      </div>
+      <div class="bl-actions">
+        <button class="lock-btn" id="bl-seed-save" onclick="saveSeedA()">&gt; SALVA_SEED</button>
+      </div>
+    </div>
+
+    <div class="input-card">
+      <div class="card-label">NUOVA_VOCE</div>
+      <div class="fields">
+        <div class="field">
+          <label>Tipo</label>
+          <div class="iw">
+            <select id="bl-type" class="np" onchange="blingTypeChange()" style="width:100%;background:#050f05;border:1px solid var(--border);border-radius:var(--radius-md);padding:var(--s3);color:var(--primary);font-family:var(--font);font-size:var(--base)">
+              <option value="fattura">FATTURA (split automatico R+A con perTesta)</option>
+              <option value="manuale">MANUALE (importo/2 in R e A)</option>
+              <option value="rettifica_a">RETTIFICA_A (saldo ricevuto da A)</option>
+            </select>
+          </div>
+          <p class="hint">// scegli come ripartire l'importo</p>
+        </div>
+        <div class="field">
+          <label>Riferimento</label>
+          <div class="iw"><input type="text" id="bl-ref" placeholder="es. Cliente X, Fatt. 12/25" maxlength="80"></div>
+          <p class="hint">// etichetta libera</p>
+        </div>
+        <div class="field" style="grid-column:1/-1">
+          <label id="bl-amt-label">Totale fattura</label>
+          <div class="iw"><span class="pre">€</span><input type="number" id="bl-amt" placeholder="0.00" min="0" step="0.01"></div>
+          <p class="hint" id="bl-amt-hint">// importo fattura lordo</p>
+        </div>
+      </div>
+      <div class="bl-actions">
+        <button class="lock-btn" id="bl-cancel-btn" onclick="cancelEdit()" style="display:none;background:transparent;border-color:var(--muted);color:var(--muted)">&gt; ANNULLA</button>
+        <button class="lock-btn" id="bl-add-btn" onclick="addBling()">&gt; AGGIUNGI</button>
+      </div>
+      <div class="lock-error" id="bl-err" style="text-align:left;margin-top:var(--s3)"></div>
+    </div>
+
+    <div class="input-card">
+      <div class="card-label">BACKUP</div>
+      <p class="hint">// export: scarica snapshot in chiaro. import: sovrascrive lo stato corrente.</p>
+      <input type="file" id="bl-import-file" accept=".json,application/json" style="display:none" onchange="importBling(event)">
+      <div class="bl-actions">
+        <button class="lock-btn" onclick="document.getElementById('bl-import-file').click()" style="background:transparent;border-color:var(--muted);color:var(--muted)">&gt; IMPORT_JSON</button>
+        <button class="lock-btn" onclick="exportBling()">&gt; EXPORT_JSON</button>
+      </div>
+    </div>
+
+    <div class="section-label">TRACKER_INCASSI</div>
+    <div class="compare">
+      <div class="col-card">
+        <div class="col-head">
+          <div class="ctitle">&gt; COLONNA_R</div>
+          <div class="cval" id="bl-tot-r">—</div>
+          <div class="bl-subtot"><span>mese:</span> <span id="bl-mon-r">—</span></div>
+          <div class="bl-subtot"><span>anno:</span> <span id="bl-yea-r">—</span></div>
+        </div>
+        <div class="col-body" id="bl-list-r">
+          <div class="row"><div class="rl" style="color:var(--faint)">// nessuna voce</div></div>
+        </div>
+      </div>
+      <div class="col-card">
+        <div class="col-head">
+          <div class="ctitle">&gt; COLONNA_A</div>
+          <div class="cval blue" id="bl-tot-a">—</div>
+          <div class="bl-subtot"><span>mese:</span> <span id="bl-mon-a">—</span></div>
+          <div class="bl-subtot"><span>anno:</span> <span id="bl-yea-a">—</span></div>
+        </div>
+        <div class="col-body" id="bl-list-a">
+          <div class="row"><div class="rl" style="color:var(--faint)">// nessuna voce</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   MONEYBOX CLIENT
+   CONFIGURA API_URL con il tuo subdomain, es:
+   var API_URL = 'https://api.tuodominio.it/api.php';
+   ============================================================ */
+var API_URL = 'https://tool.connettee.com/api.php';
+
+(function(){
+  var canvas = document.getElementById('matrix-canvas');
+  var ctx = canvas.getContext('2d');
+  var chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789ABCDEF€%+-/*';
+  var cols, drops;
+  function resize(){
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    cols = Math.floor(canvas.width / 16);
+    drops = Array(cols).fill(1);
+  }
+  resize();
+  window.addEventListener('resize', resize);
+  function draw(){
+    ctx.fillStyle = 'rgba(10,10,10,0.05)';
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.font = '14px monospace';
+    for(var i=0;i<drops.length;i++){
+      var c = chars[Math.floor(Math.random()*chars.length)];
+      ctx.fillStyle = drops[i]*16 < 40 ? '#aaffbb' : '#00ff41';
+      ctx.fillText(c, i*16, drops[i]*16);
+      if(drops[i]*16 > canvas.height && Math.random() > 0.975) drops[i]=0;
+      drops[i]++;
+    }
+  }
+  setInterval(draw, 50);
+})();
+
+/* ---------- API helper ---------- */
+function getToken(){ return sessionStorage.getItem('mb_token') || ''; }
+function setToken(t){ sessionStorage.setItem('mb_token', t); }
+function clearToken(){ sessionStorage.removeItem('mb_token'); }
+
+async function apiCall(payload){
+  var headers = {'Content-Type':'application/json'};
+  var tok = getToken();
+  if(tok) headers['Authorization'] = 'Bearer '+tok;
+  var res = await fetch(API_URL, {
+    method:'POST',
+    headers: headers,
+    body: JSON.stringify(payload)
+  });
+  if(res.status===401){
+    clearToken();
+    document.getElementById('lock-screen').style.display='flex';
+    throw new Error('unauthorized');
+  }
+  if(!res.ok) throw new Error('api_error_'+res.status);
+  return res.json();
+}
+
+/* ---------- LOGIN ---------- */
+async function unlock(){
+  var pwd = document.getElementById('pwd-input').value;
+  var err = document.getElementById('lock-error');
+  var btn = document.querySelector('.lock-btn');
+  btn.disabled = true;
+  try {
+    var res = await fetch(API_URL, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({action:'login', password: pwd})
+    });
+    if(res.status===429){
+      err.textContent = '> TROPPI_TENTATIVI: riprova piu\' tardi';
+    } else if(!res.ok){
+      err.textContent = '> ACCESSO_NEGATO: password errata';
+      document.getElementById('pwd-input').value='';
+    } else {
+      var data = await res.json();
+      setToken(data.token);
+      document.getElementById('lock-screen').style.display='none';
+      err.textContent = '';
+    }
+  } catch(e){
+    err.textContent = '> ERR_CONN: server irraggiungibile';
+  }
+  btn.disabled = false;
+  setTimeout(function(){err.textContent='';},4000);
+}
+
+function togglePwd(){
+  var inp = document.getElementById('pwd-input');
+  var icon = document.getElementById('eye-icon');
+  if(inp.type==='password'){
+    inp.type='text';
+    icon.innerHTML='<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>';
+  } else {
+    inp.type='password';
+    icon.innerHTML='<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+  }
+}
+
+document.addEventListener('DOMContentLoaded',function(){
+  if(getToken()){
+    var ls=document.getElementById('lock-screen');
+    if(ls) ls.style.display='none';
+  }
+  var h=location.hash;
+  if(h.indexOf('#k=')===0){
+    try { sessionStorage.setItem('mb_k', decodeURIComponent(h.slice(3))); } catch(e){}
+    history.replaceState(null,'',location.pathname+location.search);
+  }
+  if(sessionStorage.getItem('mb_k')){
+    var mb=document.getElementById('tool-moneybox');
+    if(mb) mb.classList.add('owner');
+  }
+});
+
+/* ---------- formatting ---------- */
+function euro(n){return new Intl.NumberFormat('it-IT',{style:'currency',currency:'EUR',minimumFractionDigits:2}).format(n);}
+function pct(n){return n.toFixed(1)+'%';}
+function set(id,val){var el=document.getElementById(id);if(el)el.textContent=val;}
+
+function switchTool(name){
+  var tabs=document.querySelectorAll('.tab');
+  var tools=document.querySelectorAll('.tool');
+  tabs.forEach(function(t){t.classList.toggle('active', t.dataset.tool===name);});
+  tools.forEach(function(t){t.classList.toggle('active', t.id==='tool-'+name);});
+}
+
+/* ---------- debounce helper ---------- */
+function debounce(fn, ms){
+  var t;
+  return function(){
+    var args = arguments, ctx = this;
+    clearTimeout(t);
+    t = setTimeout(function(){ fn.apply(ctx,args); }, ms);
+  };
+}
+
+/* ---------- COOKIE TOOL ---------- */
+async function runCookieNow(){
+  var totale   = parseFloat(document.getElementById('ck-totale').value)||0;
+  var aliqRaw  = document.getElementById('ck-aliquota').value;
+  var aliqPct  = aliqRaw === '' ? null : parseFloat(aliqRaw);
+  var contrib4 = document.getElementById('ck-contrib4').checked;
+  var obiettivo= parseFloat(document.getElementById('ck-obiettivo').value)||0;
+  var sconto   = parseFloat(document.getElementById('ck-sconto').value)||0;
+  var manCashRaw = document.getElementById('ck-man-cash').value;
+  var manualCash = manCashRaw === '' ? null : parseFloat(manCashRaw);
+
+  var s1 = document.getElementById('ck-step1-result');
+  var s2wrap = document.getElementById('ck-step2-wrap');
+  var s2 = document.getElementById('ck-step2-result');
+  var s3wrap = document.getElementById('ck-step3-wrap');
+  var s3 = document.getElementById('ck-step3-result');
+  var s4wrap = document.getElementById('ck-step4-wrap');
+  var s4 = document.getElementById('ck-step4-result');
+
+  if(totale<=0){
+    s1.style.display='none'; s2wrap.style.display='none'; s2.style.display='none';
+    s3wrap.style.display='none'; s3.style.display='none';
+    s4wrap.style.display='none'; s4.style.display='none';
+    document.getElementById('ck-newtot').value='';
+    document.getElementById('ck4-newdoc').value='';
+    return;
+  }
+
+  var data;
+  try {
+    data = await apiCall({
+      action:'cookie',
+      totale: totale, aliquota: aliqPct, contrib4: contrib4,
+      obiettivo: obiettivo, sconto: sconto, manualCash: manualCash
+    });
+  } catch(e){ return; }
+
+  if(!data.ok){
+    s1.style.display='none'; s2wrap.style.display='none'; s2.style.display='none';
+    s3wrap.style.display='none'; s3.style.display='none';
+    s4wrap.style.display='none'; s4.style.display='none';
+    document.getElementById('ck-newtot').value='';
+    document.getElementById('ck4-newdoc').value='';
+    return;
+  }
+
+  s1.style.display='block';
+  s2wrap.style.display='block';
+  set('ck-barattolo', euro(data.barattolo));
+  set('ck-barattolo-sub', data.contrib4
+    ? pct(data.aliqPct)+' su biscotti puri '+euro(data.onorario)+' (incarto: '+euro(data.contribAmount)+')'
+    : pct(data.aliqPct)+' del vassoio '+euro(data.totale));
+
+  if(!data.step2){
+    s2.style.display='none'; s3wrap.style.display='none'; s3.style.display='none';
+    document.getElementById('ck-newtot').value='';
+    renderStep4(data, s4wrap, s4);
+    return;
+  }
+  var st = data.step2;
+  s2.style.display='block';
+  set('ck-doc', euro(st.quotaDoc));
+  set('ck-cash', euro(st.quotaCash));
+  set('ck-r-tot', euro(st.totale));
+  set('ck-r-ob', '- '+euro(st.obiettivo));
+  set('ck-r-delta', euro(st.delta));
+  set('ck-r-div', '÷ '+st.divisor.toFixed(4));
+  set('ck-r-doc', euro(st.quotaDoc));
+  set('ck-c-tot', euro(st.totale));
+  set('ck-c-doc', '- '+euro(st.quotaDoc));
+  set('ck-c-cash', euro(st.quotaCash));
+  set('ck-v-doc', euro(st.verifyDoc));
+  set('ck-v-cash', '+ '+euro(st.quotaCash));
+  set('ck-v-fin', euro(st.verify));
+  set('ck-verify', euro(st.verify));
+  set('ck-v-pill', st.ok ? 'OK' : 'ERR');
+  set('ck-verify-sub', st.ok ? '= scorta ('+euro(st.obiettivo)+')' : 'scorta attesa: '+euro(st.obiettivo));
+
+  s3wrap.style.display='block';
+  document.getElementById('ck-newtot').value = (data.nuovoTot && data.nuovoTot>0) ? euro(data.nuovoTot) : '';
+
+  if(!data.step3){
+    s3.style.display='none';
+    renderStep4(data, s4wrap, s4);
+    return;
+  }
+  var st3 = data.step3;
+  s3.style.display='block';
+  set('ck3-doc', euro(st3.quotaDoc));
+  set('ck3-cash', euro(st3.quotaCash));
+  set('ck3-r-tot', euro(st3.nuovoTot));
+  set('ck3-r-ob', '- '+euro(st3.obiettivo));
+  set('ck3-r-delta', euro(st3.delta));
+  set('ck3-r-div', '÷ '+st3.divisor.toFixed(4));
+  set('ck3-r-doc', euro(st3.quotaDoc));
+  set('ck3-c-tot', euro(st3.nuovoTot));
+  set('ck3-c-doc', '- '+euro(st3.quotaDoc));
+  set('ck3-c-cash', euro(st3.quotaCash));
+  set('ck3-v-paga', euro(st3.nuovoTot));
+  set('ck3-v-doc', euro(st3.verifyDoc));
+  set('ck3-v-cash', '+ '+euro(st3.quotaCash));
+  set('ck3-v-fin', euro(st3.verify));
+  set('ck3-verify', euro(st3.verify));
+  set('ck3-v-pill', st3.ok ? 'OK' : 'ERR');
+  set('ck3-verify-sub', st3.ok ? '= scorta ('+euro(st3.obiettivo)+') invariata' : 'scorta attesa: '+euro(st3.obiettivo));
+
+  renderStep4(data, s4wrap, s4);
+}
+
+function renderStep4(data, s4wrap, s4){
+  if(!data.step2){
+    s4wrap.style.display='none';
+    s4.style.display='none';
+    document.getElementById('ck4-newdoc').value='';
+    return;
+  }
+  s4wrap.style.display='block';
+  if(!data.step4){
+    s4.style.display='none';
+    document.getElementById('ck4-newdoc').value='';
+    return;
+  }
+  var st4 = data.step4;
+  s4.style.display='block';
+  document.getElementById('ck4-newdoc').value = euro(st4.quotaDoc);
+  set('ck4-doc', euro(st4.quotaDoc));
+  set('ck4-tot', euro(st4.totalePagato));
+  set('ck4-r-ob', euro(st4.obiettivo));
+  set('ck4-r-cash', '- '+euro(st4.manualCash));
+  set('ck4-r-delta', euro(st4.obiettivo - st4.manualCash));
+  set('ck4-r-div', '÷ '+st4.divisor.toFixed(4));
+  set('ck4-r-doc', euro(st4.quotaDoc));
+  set('ck4-c-doc', euro(st4.quotaDoc));
+  set('ck4-c-cash', '+ '+euro(st4.manualCash));
+  set('ck4-c-tot', euro(st4.totalePagato));
+  var sign = st4.deltaVassoio > 0 ? '+ ' : (st4.deltaVassoio < 0 ? '- ' : '');
+  var deltaAbs = Math.abs(st4.deltaVassoio);
+  set('ck4-c-delta', sign+euro(deltaAbs));
+  set('ck4-v-doc', euro(st4.verifyDoc));
+  set('ck4-v-cash', '+ '+euro(st4.manualCash));
+  set('ck4-v-fin', euro(st4.verify));
+  set('ck4-verify', euro(st4.verify));
+  set('ck4-v-pill', st4.ok ? 'OK' : 'ERR');
+  set('ck4-verify-sub', '= scorta ('+euro(st4.obiettivo)+')');
+}
+
+var runCookie = debounce(runCookieNow, 250);
+
+/* ---------- MONEYBOX TOOL ---------- */
+async function runNow(){
+  var totaleFattura = parseFloat(document.getElementById('totale-fattura').value)||0;
+  var comm = parseFloat(document.getElementById('comm').value)||0;
+
+  if(totaleFattura<=0){
+    document.getElementById('results').style.display='none';
+    document.getElementById('contrib-display').value='';
+    return;
+  }
+
+  var data;
+  try {
+    var payload = {action:'run', totaleFattura: totaleFattura, comm: comm};
+    var k = sessionStorage.getItem('mb_k');
+    if(k) payload.k = k;
+    data = await apiCall(payload);
+  } catch(e){ return; }
+
+  if(!data.ok){
+    document.getElementById('results').style.display='none';
+    document.getElementById('contrib-display').value='';
+    return;
+  }
+
+  document.getElementById('results').style.display='block';
+  set('c2-tot', euro(data.totaleFattura));
+  set('c2-contrib', '- '+euro(data.contribCalc));
+  set('c2-imp', euro(data.baseSplit));
+  set('c2-46', '- '+euro(data.quota46));
+  set('c2-resto', euro(data.resto));
+  set('c2-div', euro(data.perTesta)+' cad.');
+  set('c2-pertesta', euro(data.perTesta));
+
+  var mb = document.getElementById('tool-moneybox');
+  if(data.meta != null){
+    mb.classList.add('owner');
+    document.getElementById('contrib-display').value = euro(data.contribCalc);
+    set('c1-fat', euro(data.fatturato));
+    set('c1-imp', euro(data.imponibile));
+    set('c1-inps', '- '+euro(data.inps));
+    set('c1-tax', '- '+euro(data.imposta));
+    set('c1-netto', euro(data.netto));
+    var commRow = document.getElementById('c1-comm-row');
+    if(data.costoComm>0){ set('c1-comm','- '+euro(data.costoComm)); commRow.style.display='flex'; }
+    else { commRow.style.display='none'; }
+    set('g-netto', euro(data.netto));
+    set('g-quota', '- '+euro(data.perTesta));
+    set('g-fin', euro(data.finale));
+    set('g-finale', euro(data.finale));
+    var gSub = document.getElementById('g-sub');
+    var gFin = document.getElementById('g-fin');
+    gSub.textContent = pct(data.meta)+' // ratio';
+    gFin.appendChild(document.createTextNode(' '));
+    var tag = document.createElement('span');
+    tag.className = 'pill';
+    tag.textContent = pct(data.meta);
+    gFin.appendChild(tag);
+  } else {
+    mb.classList.remove('owner');
+    if(sessionStorage.getItem('mb_k')) sessionStorage.removeItem('mb_k');
+  }
+}
+var run = debounce(runNow, 250);
+
+/* ---------- BLING TRACKER ---------- */
+var BL_STATE = { seedA: 0, entries: [] };
+var BL_LOADED = false;
+var BL_EDITING = null;
+
+function blingTypeChange(){
+  var t = document.getElementById('bl-type').value;
+  var lbl = document.getElementById('bl-amt-label');
+  var hint = document.getElementById('bl-amt-hint');
+  var amt = document.getElementById('bl-amt');
+  if(t==='fattura'){
+    lbl.textContent='Totale fattura';
+    hint.textContent='// importo fattura lordo';
+    amt.min='0';
+  } else if(t==='manuale'){
+    lbl.textContent='Importo';
+    hint.textContent='// verra\' diviso /2 in R e A';
+    amt.min='0';
+  } else {
+    lbl.textContent='Voce A (+/-)';
+    hint.textContent='// positivo = incasso ricevuto, negativo = debito';
+    amt.removeAttribute('min');
+  }
+}
+
+function blingSeedDirty(){
+  var btn=document.getElementById('bl-seed-save');
+  btn.textContent='> SALVA_SEED *';
+}
+
+function blingErr(msg){
+  var e=document.getElementById('bl-err');
+  e.textContent = msg ? '> '+msg : '';
+  if(msg) setTimeout(function(){ if(e.textContent==='> '+msg) e.textContent=''; },4000);
+}
+
+async function loadBling(){
+  try {
+    var data = await apiCall({action:'bling', op:'load'});
+    if(data && data.ok){
+      BL_STATE = { seedA: data.seedA||0, entries: data.entries||[] };
+      BL_LOADED = true;
+      document.getElementById('bl-seedA').value = BL_STATE.seedA || '';
+      document.getElementById('bl-seed-save').textContent='> SALVA_SEED';
+      renderBling();
+    }
+  } catch(e){}
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
+}
+
+function renderBling(){
+  var entries = BL_STATE.entries || [];
+  var totR = 0, totA = (BL_STATE.seedA||0);
+  var monR = 0, monA = 0, yeaR = 0, yeaA = 0;
+  var now = new Date();
+  var monStart = Math.floor(new Date(now.getFullYear(), now.getMonth(), 1).getTime()/1000);
+  var yeaStart = Math.floor(new Date(now.getFullYear(), 0, 1).getTime()/1000);
+  var htmlR = '', htmlA = '';
+
+  if(BL_STATE.seedA){
+    htmlA += '<div class="row">'
+      + '<div class="rl"><span class="bl-tag seed">SEED</span><span class="bl-ref">saldo iniziale</span></div>'
+      + '<div class="rv '+((BL_STATE.seedA<0)?'neg':'')+'">'+euro(BL_STATE.seedA)+'</div>'
+      + '</div>';
+  }
+
+  entries.forEach(function(e){
+    var isNeg = e.amount < 0;
+    var tagLabel = String(e.type||'').toUpperCase().replace('_','/');
+    var tag = '<span class="bl-tag '+e.type+'">'+tagLabel+'</span>';
+    var edit = '<button class="bl-edit" onclick="editBling(\''+e.txId+'\')" title="modifica">&#9998;</button>';
+    var del  = '<button class="bl-del" onclick="deleteBling(\''+e.txId+'\')" title="elimina">x</button>';
+    var row = '<div class="row">'
+      + '<div class="rl">'+tag+'<span class="bl-ref">'+escapeHtml(e.ref||'')+'</span></div>'
+      + '<div class="rv '+(isNeg?'neg':'')+'">'+euro(e.amount)+edit+del+'</div>'
+      + '</div>';
+    var ts = Number(e.ts) || 0;
+    if(e.col==='R'){
+      totR += e.amount;
+      if(ts>=monStart) monR += e.amount;
+      if(ts>=yeaStart) yeaR += e.amount;
+      htmlR += row;
+    } else {
+      totA += e.amount;
+      if(ts>=monStart) monA += e.amount;
+      if(ts>=yeaStart) yeaA += e.amount;
+      htmlA += row;
+    }
+  });
+
+  document.getElementById('bl-list-r').innerHTML = htmlR || '<div class="row"><div class="rl" style="color:var(--faint)">// nessuna voce</div></div>';
+  document.getElementById('bl-list-a').innerHTML = htmlA || '<div class="row"><div class="rl" style="color:var(--faint)">// nessuna voce</div></div>';
+  document.getElementById('bl-tot-r').textContent = euro(totR);
+  document.getElementById('bl-tot-a').textContent = euro(totA);
+  document.getElementById('bl-mon-r').textContent = euro(monR);
+  document.getElementById('bl-mon-a').textContent = euro(monA);
+  document.getElementById('bl-yea-r').textContent = euro(yeaR);
+  document.getElementById('bl-yea-a').textContent = euro(yeaA);
+}
+
+function findTx(txId){
+  for(var i=0;i<BL_STATE.entries.length;i++){
+    if(BL_STATE.entries[i].txId===txId) return BL_STATE.entries[i];
+  }
+  return null;
+}
+
+function editBling(txId){
+  var e = findTx(txId);
+  if(!e) return;
+  BL_EDITING = txId;
+  var type = e.type;
+  var input = (e.input != null) ? e.input : null;
+  if(input == null){
+    // fallback per entries legacy senza campo input
+    if(type==='fattura')      input = Math.abs(e.amount) * 2 / 0.54 * 1.04;
+    else if(type==='manuale') input = Math.abs(e.amount) * 2;
+    else                      input = e.amount;
+    input = Math.round(input*100)/100;
+  }
+  var typeSel = document.getElementById('bl-type');
+  typeSel.value = type;
+  typeSel.disabled = true;
+  blingTypeChange();
+  document.getElementById('bl-ref').value = e.ref || '';
+  document.getElementById('bl-amt').value = input;
+  document.getElementById('bl-add-btn').textContent = '> SALVA_MODIFICA';
+  document.getElementById('bl-cancel-btn').style.display = 'inline-block';
+  document.getElementById('bl-ref').focus();
+}
+
+function cancelEdit(){
+  BL_EDITING = null;
+  document.getElementById('bl-type').disabled = false;
+  document.getElementById('bl-ref').value = '';
+  document.getElementById('bl-amt').value = '';
+  document.getElementById('bl-add-btn').textContent = '> AGGIUNGI';
+  document.getElementById('bl-cancel-btn').style.display = 'none';
+  blingErr('');
+}
+
+async function addBling(){
+  var type = document.getElementById('bl-type').value;
+  var ref  = document.getElementById('bl-ref').value.trim();
+  var amt  = parseFloat(document.getElementById('bl-amt').value);
+  if(!ref){ return blingErr('riferimento_mancante'); }
+  if(!isFinite(amt) || amt===0){ return blingErr('importo_non_valido'); }
+  if(type!=='rettifica_a' && amt<0){ return blingErr('importo_negativo_non_ammesso'); }
+  try {
+    var payload = BL_EDITING
+      ? {action:'bling', op:'edit', txId: BL_EDITING, ref: ref, amount: amt}
+      : {action:'bling', op:'add',  type: type, ref: ref, amount: amt};
+    var data = await apiCall(payload);
+    if(data && data.ok){
+      BL_STATE = { seedA: data.seedA||0, entries: data.entries||[] };
+      cancelEdit();
+      renderBling();
+    } else {
+      blingErr((data && data.error) || 'errore');
+    }
+  } catch(e){ blingErr('errore_connessione'); }
+}
+
+async function deleteBling(txId){
+  if(!txId) return;
+  if(!confirm('Eliminare questa voce? L\'operazione non e\' annullabile.')) return;
+  try {
+    var data = await apiCall({action:'bling', op:'delete', txId:txId});
+    if(data && data.ok){
+      BL_STATE = { seedA: data.seedA||0, entries: data.entries||[] };
+      if(BL_EDITING === txId) cancelEdit();
+      renderBling();
+    }
+  } catch(e){}
+}
+
+async function saveSeedA(){
+  var v = parseFloat(document.getElementById('bl-seedA').value);
+  if(!isFinite(v)) v = 0;
+  try {
+    var data = await apiCall({action:'bling', op:'setSeedA', seedA:v});
+    if(data && data.ok){
+      BL_STATE.seedA = data.seedA||0;
+      document.getElementById('bl-seed-save').textContent='> SALVA_SEED';
+      renderBling();
+    }
+  } catch(e){}
+}
+
+async function exportBling(){
+  try {
+    var data = await apiCall({action:'bling', op:'export'});
+    if(!data || !data.ok) return blingErr('export_fallito');
+    var blob = new Blob([JSON.stringify(data.export, null, 2)], {type:'application/json'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    var d = new Date();
+    var pad = function(n){return (n<10?'0':'')+n;};
+    a.href = url;
+    a.download = 'bling-'+d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())+'-'+pad(d.getHours())+pad(d.getMinutes())+'.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+  } catch(e){ blingErr('export_fallito'); }
+}
+
+function importBling(event){
+  var file = event.target.files && event.target.files[0];
+  if(!file) return;
+  if(file.size > 1024*1024){ event.target.value=''; return blingErr('file_troppo_grande'); }
+  var reader = new FileReader();
+  reader.onload = async function(ev){
+    event.target.value = '';
+    var parsed;
+    try { parsed = JSON.parse(ev.target.result); }
+    catch(e){ return blingErr('json_non_valido'); }
+    if(!parsed || typeof parsed!=='object') return blingErr('json_non_valido');
+    var nEntries = Array.isArray(parsed.entries) ? parsed.entries.length : 0;
+    if(!confirm('Sovrascrivere lo stato corrente con '+nEntries+' voci dal file? L\'operazione e\' irreversibile (verra\' salvato un .bak sul server).')) return;
+    try {
+      var data = await apiCall({action:'bling', op:'import', data: parsed});
+      if(data && data.ok){
+        BL_STATE = { seedA: data.seedA||0, entries: data.entries||[] };
+        document.getElementById('bl-seedA').value = BL_STATE.seedA || '';
+        cancelEdit();
+        renderBling();
+      } else {
+        blingErr((data && data.error) || 'import_fallito');
+      }
+    } catch(e){ blingErr('errore_connessione'); }
+  };
+  reader.readAsText(file);
+}
+
+var _origSwitchTool = switchTool;
+switchTool = function(name){
+  _origSwitchTool(name);
+  try { localStorage.setItem('mb_lastTab', name); } catch(e){}
+  if(name==='bling' && !BL_LOADED) loadBling();
+};
+
+document.addEventListener('DOMContentLoaded', function(){
+  var last = null;
+  try { last = localStorage.getItem('mb_lastTab'); } catch(e){}
+  if(last && last!=='moneybox' && document.getElementById('tool-'+last)){
+    switchTool(last);
+  }
+});
+</script>
+</body>
+</html>
